@@ -3,7 +3,7 @@ FROM python:3.12
 # Команда для вывода логов в консоле
 ENV PYTHONUNBUFFERED=1
 # Устанавливаем рабочий каталог
-WORKDIR /skill_tap
+WORKDIR /dogs
 # Копируем файл requirements.txt
 COPY requirements.txt requirements.txt
 # Экспортируем порт, который будет использоваться для доступа к приложению
