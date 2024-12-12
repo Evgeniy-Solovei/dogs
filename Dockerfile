@@ -11,6 +11,6 @@ EXPOSE 8000
 # Устанавливаем зависимости из файла requirements.txt без кэша
 RUN pip install -r requirements.txt
 # Копируем файлы и папки из папки CRM_system в рабочий каталог WORKDIR
-COPY skill_tap .
+COPY dogs .
 # Запускаем Uvicorn сервер
 CMD ["uvicorn", "dogs.asgi:application", "--host", "0.0.0.0", "--port", "8000 & python telegram.py"]
