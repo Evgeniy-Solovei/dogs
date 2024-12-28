@@ -29,8 +29,8 @@ SECRET_KEY = 'django-insecure-p^n=gfs@yomla+$mg71&1rj0$ai0bxox!l(_14=p+rqay(lb1a
 DEBUG = True
 
 # IP адреса или доменные имена, которые имеют доступ к приложению
-ALLOWED_HOSTS = ['5.101.50.189', 'localhost', '127.0.0.1', '0.0.0.0', 'boxy.skillbox.by']
-ROOT_URLCONF = 'skill_tap.urls'
+ALLOWED_HOSTS = ['5.101.50.189', 'localhost', '127.0.0.1', '0.0.0.0', 'irwinhouse.club']
+ROOT_URLCONF = 'dogs.urls'
 # Переменная для управления CORS, содержит список доменов с которых разрешены запросы
 CORS_ALLOWED_ORIGINS = ['http://5.101.50.189', 'https://5.101.50.189', 'http://irwinhouse.club', 'https://irwinhouse.club']
 # Переменная определяет список доменов, которым Django доверяет при обработке CSRF-токенов.
