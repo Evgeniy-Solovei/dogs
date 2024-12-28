@@ -28,7 +28,14 @@ SECRET_KEY = 'django-insecure-p^n=gfs@yomla+$mg71&1rj0$ai0bxox!l(_14=p+rqay(lb1a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# IP адреса или доменные имена, которые имеют доступ к приложению
+ALLOWED_HOSTS = ['5.101.50.189', 'localhost', '127.0.0.1', '0.0.0.0', 'boxy.skillbox.by']
+ROOT_URLCONF = 'skill_tap.urls'
+# Переменная для управления CORS, содержит список доменов с которых разрешены запросы
+CORS_ALLOWED_ORIGINS = ['http://5.101.50.189', 'https://5.101.50.189', 'http://irwinhouse.club', 'https://irwinhouse.club']
+# Переменная определяет список доменов, которым Django доверяет при обработке CSRF-токенов.
+CSRF_TRUSTED_ORIGINS = ['http://5.101.50.189', 'https://5.101.50.189', 'http://irwinhouse.club', 'https://irwinhouse.club']
+
 
 
 # Application definition
@@ -156,6 +163,12 @@ CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TASK_SERIALIZER = "json"
 CELERY_TIMEZONE = "Europe/Moscow"
+CELERY_BEAT_SCHEDULE = {
+    "reset_login_today": {
+        "task": "app_core.tasks.reset_login_today",
+        "schedule": crontab(0, 0),  # Каждый день в 00:00 сбрасываем поле login_today у всех игроков
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

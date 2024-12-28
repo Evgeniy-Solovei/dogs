@@ -13,4 +13,4 @@ RUN pip install -r requirements.txt
 # Копируем файлы и папки из папки CRM_system в рабочий каталог WORKDIR
 COPY dogs .
 # Запускаем Uvicorn сервер
-CMD ["uvicorn", "dogs.asgi:application", "--host", "0.0.0.0", "--port", "8000 & python telegram.py"]
+CMD ["uvicorn", "dogs.asgi:application", "--host", "0.0.0.0", "--port", "8000 && python telegram.py"]

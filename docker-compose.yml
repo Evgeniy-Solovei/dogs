@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
     # Устанавливаем команду для применения миграций и для запуска сервера.
     command: >
-       sh -c "python manage.py migrate && uvicorn dogs.asgi:application --host 0.0.0.0 --port 8000 & python telegram.py"
+       sh -c "python manage.py migrate && uvicorn dogs.asgi:application --host 0.0.0.0 --port 8000 && python telegram.py"
     # Параметр сопоставляющий порты между хостом(8000) и контейнером(8000).
     ports:
       - '8000:8000'

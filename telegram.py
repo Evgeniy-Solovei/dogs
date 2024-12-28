@@ -25,17 +25,17 @@ async def handle_start(message: types.Message):
     command_parts = message.text.split()
     if len(command_parts) > 1:
         referrer_id = command_parts[1].replace('id_', '')  # Удаляем префикс 'id_'
-        web_app_url = f'https://boxy.skillbox.by?id={referrer_id}'
+        web_app_url = f'https://irwinhouse.club?id={referrer_id}'
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Запуск", web_app=WebAppInfo(url=web_app_url))]
         ])
-        await message.answer("Начни сейчас и догони своего друга", reply_markup=keyboard)
+        await message.answer("Попробуй свои силы!", reply_markup=keyboard)
     else:
-        web_app_url = 'https://boxy.skillbox.by/'
+        web_app_url = 'https://irwinhouse.club/'
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Запуск", web_app=WebAppInfo(url=web_app_url))]
         ])
-        await message.answer("Попробуй свои силы.Удачи !", reply_markup=keyboard)
+        await message.answer("Залетай в игру!", reply_markup=keyboard)
 
 
 async def main() -> None:
