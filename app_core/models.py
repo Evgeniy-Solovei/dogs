@@ -57,7 +57,7 @@ class Player(models.Model):
             self.consecutive_days = 1
         # Получаем бонус для текущего дня
         daily_bonuses = DAILY_BONUSES
-        bonus = next((b for b in daily_bonuses if b["day"] == self.consecutive_days),{"coins": 0})
+        bonus = next((b for b in daily_bonuses if b["day"] == self.consecutive_days), {"coins": 0})
         self.coins += bonus.get("coins", 0)
         self.last_login_date = today
         await self.asave()
@@ -93,9 +93,10 @@ class Dog(models.Model):
     @classmethod
     async def find_free_field(cls, player):
         """Находим первое свободное место на поле игрока"""
-        # Получаем все занятые места
-        occupied_fields = list(await player.dogs.filter(is_active=True).values_list('dog_field', flat=True))
-        occupied_fields = set(occupied_fields)
+        # Получаем все занятые места с помощью асинхронного итератора
+        occupied_fields = set()
+        async for dog_field in player.dogs.filter(is_active=True).values_list('dog_field', flat=True).aiterator():
+            occupied_fields.add(dog_field)
         # Ищем первое свободное место (от 1 до 12)
         for field in range(1, 13):
             if field not in occupied_fields:
@@ -110,40 +111,64 @@ class Dog(models.Model):
             raise ValueError("У игрока уже максимальное количество собак (12).")
         # Получаем виртуальную собаку и используем её данные
         virtual_dog = await cls.get_or_create_virtual_dog(player)
-
-        # Создаем активную собаку
-        dog = await cls.objects.acreate(
-            player=player,
-            lvl=virtual_dog.lvl,
-            price=virtual_dog.price,
-            percent_up_price=virtual_dog.percent_up_price,
-            bonus_second=virtual_dog.bonus_second,
-            bonus_connection=virtual_dog.bonus_connection,
-            dog_fields=cls.find_free_field(player),
-            is_active=True
-        )
-        # Обновляем виртуальную собаку для следующей покупки
-        await cls.update_virtual_dog(player)
-        return dog
+        if player.coins >= virtual_dog.price:
+            player.coins -= virtual_dog.price
+            player.coins_spent_today += virtual_dog.price
+            player.coins_in_second += virtual_dog.bonus_second
+            await player.asave(update_fields=['coins', 'coins_spent_today', 'coins_in_second'])
+            # Создаем активную собаку
+            dog = await cls.objects.acreate(
+                player=player,
+                lvl=virtual_dog.lvl,
+                price=virtual_dog.price,
+                percent_up_price=virtual_dog.percent_up_price,
+                bonus_second=virtual_dog.bonus_second,
+                bonus_connection=virtual_dog.bonus_connection,
+                dog_field=await cls.find_free_field(player),
+                is_active=True
+            )
+            # Обновляем виртуальную собаку для следующей покупки
+            await cls.update_virtual_dog(player)
+            return dog
+        else:
+            raise ValueError("У игрока недостаточно денег для создания собаки.")
 
     @classmethod
     async def update_virtual_dog(cls, player):
-        """Обновляем виртуальную собаку"""
+        """Обновляем виртуальную собаку (уровень и цену)"""
         virtual_dog = await cls.get_or_create_virtual_dog(player)
         # Определяем уровень следующей собаки
-        max_lvl_dog = await player.dogs.filter(is_active=True).aaggregate(models.Max('lvl'))['lvl__max']
-        if virtual_dog.lvl >= max_lvl_dog:
-            return virtual_dog
+        max_lvl_result = await player.dogs.filter(is_active=True).aaggregate(models.Max('lvl'))
+        max_lvl_dog = max_lvl_result.get('lvl__max')
         if max_lvl_dog is None:
             max_lvl_dog = 1
-        virtual_dog.lvl = max_lvl_dog // 5 + 1 if max_lvl_dog >= 5 else 1
+        if max_lvl_dog >= virtual_dog.lvl:
+            virtual_dog.lvl = max_lvl_dog // 5 + 1 if max_lvl_dog >= 5 else 1
+            virtual_dog.bonus_second = virtual_dog.bonus_second * virtual_dog.lvl
+            virtual_dog.bonus_connection = virtual_dog.lvl - 1
         virtual_dog.price = int(virtual_dog.price * (1 + virtual_dog.percent_up_price / 100))
-        virtual_dog.bonus_second = virtual_dog.bonus_second * 2
-        virtual_dog.bonus_connection = virtual_dog.lvl - 1
         # Обновляем процент увеличения цены
         if virtual_dog.lvl == 2:
             virtual_dog.percent_up_price = 17.5
         await virtual_dog.asave()
+        return virtual_dog
+
+    @classmethod
+    async def update_virtual_dog_level(cls, player):
+        """Обновляем уровень виртуальной собаки (без изменения цены)"""
+        virtual_dog = await cls.get_or_create_virtual_dog(player)
+        # Определяем уровень следующей собаки
+        max_lvl_result = await player.dogs.filter(is_active=True).aaggregate(models.Max('lvl'))
+        max_lvl_dog = max_lvl_result.get('lvl__max')
+        if max_lvl_dog is None:
+            max_lvl_dog = 1
+        if max_lvl_dog >= virtual_dog.lvl:
+            virtual_dog.lvl = max_lvl_dog // 5 + 1 if max_lvl_dog >= 5 else 1
+            virtual_dog.bonus_second = virtual_dog.bonus_second * virtual_dog.lvl
+            virtual_dog.bonus_connection = virtual_dog.lvl - 1
+            if virtual_dog.lvl == 2:
+                virtual_dog.percent_up_price = 17.5
+            await virtual_dog.asave()
         return virtual_dog
 
     @classmethod
@@ -152,7 +177,12 @@ class Dog(models.Model):
         upgraded_dogs = []
         for dog_ids in dog_pairs:
             # Получаем собак по их ID
-            dogs = await cls.objects.filter(id__in=dog_ids, player=player, is_active=True).alist()
+            dogs_query = cls.objects.filter(id__in=dog_ids, player=player, is_active=True)
+            # # Преобразуем QuerySet в список асинхронно
+            dogs = [dog async for dog in dogs_query.aiterator()]
+            # Проверяем, что найдены ровно две собаки
+            if len(dogs) != 2:
+                raise ValueError(f"Для скрещивания необходимо ровно две собаки. Найдено: {len(dogs)}")
             # Проверяем, что все собаки одного уровня
             if len(set(dog.lvl for dog in dogs)) != 1:
                 raise ValueError("Скрещивать можно только собак одного уровня.")
@@ -163,9 +193,15 @@ class Dog(models.Model):
             await dog_to_upgrade.asave()
             await dog_to_delete.adelete()
             upgraded_dogs.append(dog_to_upgrade)
+            player.coins_in_second += dog_to_upgrade.lvl - 1
+            await player.asave(update_fields=['coins_in_second'])
         # Обновляем виртуальную собаку после скрещивания
-        await cls.update_virtual_dog(player)
+        await cls.update_virtual_dog_level(player)
         return upgraded_dogs
+
+    class Meta:
+        verbose_name = "Собака"
+        verbose_name_plural = "Собаки"
 
 
 class ReferralSystem(models.Model):

@@ -7,3 +7,10 @@ class PlayerSerializer(ModelSerializer):
     class Meta:
         model = Player
         fields = '__all__'
+
+
+class DogSerializer(ModelSerializer):
+    """Сериализатор для модели Dog"""
+    class Meta:
+        model = Dog
+        fields = '__all__'
