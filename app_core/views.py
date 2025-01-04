@@ -1,6 +1,5 @@
 from adrf.generics import GenericAPIView
 from adrf.views import APIView
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, inline_serializer, extend_schema_view, extend_schema, OpenApiExample, \
     OpenApiParameter
 from rest_framework import status, serializers

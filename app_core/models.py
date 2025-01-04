@@ -199,6 +199,18 @@ class Dog(models.Model):
         await cls.update_virtual_dog_level(player)
         return upgraded_dogs
 
+    @classmethod
+    async def delete_dog(cls, player, dog_id):
+        """Удаление собаки"""
+        try:
+            dog = await cls.objects.aget(id=dog_id, player=player, is_active=True)
+            await dog.adelete()
+            return True
+        except cls.DoesNotExist:
+            raise ValueError("Собака не найдена или уже удалена.")
+        except Exception as e:
+            raise ValueError(f"Ошибка при удалении собаки: {str(e)}")
+
     class Meta:
         verbose_name = "Собака"
         verbose_name_plural = "Собаки"

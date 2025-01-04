@@ -8,6 +8,9 @@ WORKDIR /dogs
 COPY requirements.txt requirements.txt
 # Экспортируем порт, который будет использоваться для доступа к приложению
 EXPOSE 8000
+# Устанавливаем часовой пояс Europe/Moscow
+ENV TZ=Europe/Moscow
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Устанавливаем зависимости из файла requirements.txt без кэша
 RUN pip install -r requirements.txt
 # Копируем файлы и папки из папки CRM_system в рабочий каталог WORKDIR

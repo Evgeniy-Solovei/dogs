@@ -51,8 +51,11 @@ INSTALLED_APPS = [
     'app_core.apps.AppCoreConfig',
     'drf_spectacular',
     'adrf',
+    'channels',
 
 ]
+
+ASGI_APPLICATION = 'dogs.asgi.application'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
